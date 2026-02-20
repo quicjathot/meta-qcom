@@ -21,7 +21,9 @@ SRCBRANCH ?= "nobranch=1"
 SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
-SRC_URI += "file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch"
+SRC_URI += "file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
+            file://0001-Add-cologne-support-on-RB8.patch \
+"
 
 # Additional kernel configs.
 SRC_URI += " \
