@@ -23,6 +23,7 @@ SRCBRANCH:class-devupstream ?= "branch=qcom-6.18.y"
 SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=https"
 SRC_URI += "file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
             file://0001-Add-qcc_2072-support-on-RB3gen2.patch \
+            file://0001-this-calib-change.patch \
 "
 
 # Additional kernel configs.
