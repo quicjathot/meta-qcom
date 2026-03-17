@@ -24,6 +24,7 @@ SRC_URI = "git://github.com/qualcomm-linux/kernel.git;${SRCBRANCH};protocol=http
 SRC_URI += "file://0001-tools-use-basename-to-identify-file-in-gen-mach-type.patch \
             file://0001-Add-qcc_2072-support-on-RB3gen2.patch \
             file://0001-this-calib-change.patch \
+            file://0001-Add-DTS-overlay-for-rb3gen2-industrial-mezzanine-var.patch \
 "
 
 # Additional kernel configs.

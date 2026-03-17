@@ -1,0 +1,158 @@
+From 40ceeee525aecf48e8494667c959c3a71bfe4543 Mon Sep 17 00:00:00 2001
+From: Janaki Ramaiah Thota <janaki.thota@oss.qualcomm.com>
+Date: Tue, 17 Mar 2026 22:08:48 +0530
+Subject: [PATCH] Add DTS overlay for rb3gen2 industrial mezzanine variant
+
+ - attached with BT module QCC2072 over M.2 UART.
+
+Upstream-Status: Pending
+Signed-off-by: Janaki Ramaiah Thota <janaki.thota@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/Makefile             |   2 +
+ ...3gen2-industrial-mezzanine-m2-cologne.dtso | 118 ++++++++++++++++++
+ 2 files changed, 120 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/qcs6490-rb3gen2-industrial-mezzanine-m2-cologne.dtso
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index bb197fc5d86e..5bc16b7d9059 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -154,9 +154,11 @@ dtb-$(CONFIG_ARCH_QCOM)	+= qcs6490-rb3gen2.dtb
+ 
+ qcs6490-rb3gen2-vision-mezzanine-dtbs := qcs6490-rb3gen2.dtb qcs6490-rb3gen2-vision-mezzanine.dtbo
+ qcs6490-rb3gen2-industrial-mezzanine-dtbs := qcs6490-rb3gen2.dtb qcs6490-rb3gen2-industrial-mezzanine.dtbo
++qcs6490-rb3gen2-industrial-mezzanine-m2-cologne-dtbs := qcs6490-rb3gen2.dtb qcs6490-rb3gen2-industrial-mezzanine.dtbo qcs6490-rb3gen2-industrial-mezzanine-m2-cologne.dtbo
+ 
+ dtb-$(CONFIG_ARCH_QCOM)	+= qcs6490-rb3gen2-industrial-mezzanine.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= qcs6490-rb3gen2-vision-mezzanine.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= qcs6490-rb3gen2-industrial-mezzanine-m2-cologne.dtb
+ 
+ dtb-$(CONFIG_ARCH_QCOM)	+= qcs8300-ride.dtb
+ 
+diff --git a/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2-industrial-mezzanine-m2-cologne.dtso b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2-industrial-mezzanine-m2-cologne.dtso
+new file mode 100644
+index 000000000000..186650050780
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2-industrial-mezzanine-m2-cologne.dtso
+@@ -0,0 +1,118 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (c) 2025, Qualcomm Innovation Center, Inc. All rights reserved.
++*/
++
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/clock/qcom,gcc-sc7280.h>
++#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++
++&tlmm {
++	qup_uart4_sleep_cts: qup-uart4-sleep-cts-state {
++		pins = "gpio16";
++		function = "gpio";
++		/*
++		 * Configure a bias-bus-hold on CTS to lower power
++		 * usage when Bluetooth is turned off. Bus hold will
++		 * maintain a low power state regardless of whether
++		 * the Bluetooth module drives the pin in either
++		 * direction or leaves the pin fully unpowered.
++		 */
++		bias-bus-hold;
++	};
++
++	qup_uart4_sleep_rts: qup-uart4-sleep-rts-state {
++		pins = "gpio17";
++		function = "gpio";
++		/*
++		 * Configure pull-down on RTS. As RTS is active low
++		 * signal, pull it low to indicate the BT SoC that it
++		 * can wakeup the system anytime from suspend state by
++		 * pulling RX low (by sending wakeup bytes).
++		 */
++		 bias-pull-down;
++	};
++
++	qup_uart4_sleep_rx: qup-uart4-sleep-rx-state {
++		pins = "gpio19";
++		function = "gpio";
++		/*
++		 * Configure a pull-up on RX. This is needed to avoid
++		 * garbage data when the TX pin of the Bluetooth module
++		 * is floating which may cause spurious wakeups.
++		 */
++		bias-pull-up;
++	};
++
++	qup_uart4_sleep_tx: qup-uart4-sleep-tx-state {
++		pins = "gpio18";
++		function = "gpio";
++		/*
++		 * Configure pull-up on TX when it isn't actively driven
++		 * to prevent BT SoC from receiving garbage during sleep.
++		 */
++		 bias-pull-up;
++	};
++
++	sw_ctrl: sw-ctrl-state {
++		pins = "gpio86";
++		function = "gpio";
++		bias-pull-down;
++	};
++};
++&qup_uart4_cts {
++	/*
++	 * Configure a bias-bus-hold on CTS to lower power
++	 * usage when Bluetooth is turned off. Bus hold will
++	 * maintain a low power state regardless of whether
++	 * the Bluetooth module drives the pin in either
++	 * direction or leaves the pin fully unpowered.
++	 */
++	bias-pull-up;
++};
++
++&qup_uart4_rts {
++	/* We'll drive RTS, so no pull */
++	drive-strength = <2>;
++	bias-disable;
++};
++
++&qup_uart4_rx {
++	/*
++	 * Configure a pull-up on RX. This is needed to avoid
++	 * garbage data when the TX pin of the Bluetooth module is
++	 * in tri-state (module powered off or not driving the
++	 * signal yet).
++	 */
++	bias-pull-up;
++};
++
++&qup_uart4_tx {
++	/* We'll drive TX, so no pull */
++	drive-strength = <2>;
++	bias-disable;
++};
++
++&uart4 {
++	status = "okay";
++	/delete-property/ interrupts;
++	interrupts-extended = <&intc GIC_SPI 605 IRQ_TYPE_LEVEL_HIGH>,
++				<&tlmm 19 IRQ_TYPE_EDGE_FALLING>;
++	pinctrl-names = "default", "sleep";
++	pinctrl-1 = <&qup_uart4_sleep_cts>, <&qup_uart4_sleep_rts>,
++			<&qup_uart4_sleep_tx>, <&qup_uart4_sleep_rx>;
++
++	bluetooth1: bluetooth1 {
++		compatible = "qcom,qcc2072-bt";
++		pinctrl-names = "default";
++		max-speed = <3200000>;
++	};
++};
++
++&bluetooth {
++status = "disabled";
++};
++ 
+-- 
+2.34.1
+
